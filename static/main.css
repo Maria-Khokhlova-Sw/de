@@ -1,0 +1,23 @@
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input { display:block; margin:8px 0; padding:8px; width:250px; }
+    button { padding:8px 12px; margin-top:8px; }
+    .captcha { margin-top:20px; }
+.selection {
+  width: 220px;
+  height: 220px;
+  border: 2px dashed #ccc;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 100px);
+  grid-template-rows: repeat(2, 100px);
+  gap: 6px;
+  justify-content: center;
+  align-content: center;
+}
+
+
+    .pool { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
+    .pool img, .selection img { width:100px; height:100px; object-fit:cover; cursor:pointer; border-radius:6px; border:1px solid #ddd; }
+    .pool img.disabled { opacity:0.3; pointer-events:none; }
+    #message { margin-top:12px; font-weight:600; }
+    #clearCaptcha { margin-left:6px; }

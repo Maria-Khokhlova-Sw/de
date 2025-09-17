@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Логин с капчей</title>
+  <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+  <h2>Логин</h2>
+
+  <input type="text" id="login" placeholder="Login" />
+  <input type="password" id="password" placeholder="Password" />
+  <button id="loginBtn" disabled>Login</button>
+
+  <p id="message"></p>
+
+  <div class="captcha">
+    <h3>Капча — соберите фрагменты в порядке 1 → 2 → 3 → 4</h3>
+    <div id="selection" class="selection" aria-label="Выбранные фрагменты"></div>
+    <div id="pool" class="pool" aria-label="Фрагменты для выбора"></div>
+    <div style="margin-top:8px;">
+      <button id="clearCaptcha">Очистить капчу</button>
+      <button id="reshuffle">Перемешать</button>
+    </div>
+  </div>
+
+  <script>
+    const IMAGES = [1,2,3,4];
+
+    const pool = document.getElementById('pool');
+    const selection = document.getElementById('selection');
+    const loginBtn = document.getElementById('loginBtn');
+    const msg = document.getElementById('message');
+    const clearBtn = document.getElementById('clearCaptcha');
+    const reshuffleBtn = document.getElementById('reshuffle');
+
+    let selectedOrder = [];
+
+    function shuffle(arr) {
+  return arr.slice().sort(() => Math.random() - 0.5);
+}
+
+
+   function renderPool() {
+  pool.innerHTML = '';
+  const order = shuffle(IMAGES);
+  for (const id of order) {
+    const img = document.createElement('img');
+    img.src = `/static/img/${id}.png`; 
+    img.alt = `фрагмент ${id}`;
+    img.dataset.id = id;
+    img.className = 'piece';
+    img.addEventListener('click', () => onPoolClick(img));
+    pool.appendChild(img);
+  }
+}
+
+    function onPoolClick(poolImg) {
+      if (poolImg.classList.contains('disabled')) return;
+      if (selectedOrder.length >= 4) return;
+      poolImg.classList.add('disabled');
+      selectedOrder.push(parseInt(poolImg.dataset.id, 10));
+
+      const selImg = document.createElement('img');
+      selImg.src = poolImg.src;
+      selImg.alt = `выбранный ${poolImg.dataset.id}`;
+      selImg.dataset.id = poolImg.dataset.id;
+      selImg.className = 'selected';
+      selImg.addEventListener('click', () => onSelectedClick(selImg));
+      selection.appendChild(selImg);
+
+      updateLoginButton();
+    }
+
+    function onSelectedClick(selImg) {
+      const children = Array.from(selection.children);
+      const idx = children.indexOf(selImg);
+      if (idx === -1) return;
+      const id = parseInt(selImg.dataset.id, 10);
+      selectedOrder.splice(idx, 1);
+      selImg.remove();
+      const poolImg = pool.querySelector(`img[data-id="${id}"]`);
+      if (poolImg) poolImg.classList.remove('disabled');
+
+      updateLoginButton();
+    }
+
+    function clearCaptcha() {
+      selectedOrder = [];
+      selection.innerHTML = '';
+      const imgs = pool.querySelectorAll('img.disabled');
+      imgs.forEach(i => i.classList.remove('disabled'));
+      updateLoginButton();
+    }
+
+    function updateLoginButton() {
+      loginBtn.disabled = selectedOrder.length !== 4;
+    }
+
+    clearBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearCaptcha();
+    });
+
+    reshuffleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearCaptcha();
+      renderPool();
+    });
+
+    loginBtn.addEventListener('click', async () => {
+      const login = document.getElementById('login').value.trim();
+      const password = document.getElementById('password').value;
+      if (!login) {
+        msg.innerText = 'Введите логин';
+        return;
+      }
+      if (!password) {
+        msg.innerText = 'Введите пароль';
+        return;
+      }
+      if (selectedOrder.length !== 4) {
+        msg.innerText = 'Капча не собрана';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      msg.innerText = 'Отправка...';
+
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            login,
+            password,
+            captcha_order: selectedOrder
+          })
+        });
+        const data = await response.json();
+        msg.innerText = data.message || JSON.stringify(data);
+
+        if (data.status === 'success') {
+          loginBtn.disabled = true;
+        } else {
+          clearCaptcha();
+          renderPool();
+        }
+      } catch (err) {
+        msg.innerText = 'Ошибка связи с сервером';
+      } finally {
+        updateLoginButton();
+      }
+    });
+
+    renderPool();
+    updateLoginButton();
+  </script>
+</body>
+</html>
