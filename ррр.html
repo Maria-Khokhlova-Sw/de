@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Капча</title>
+    <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+    <div class="captcha">
+    <h3>Капча — соберите фрагменты в порядке 1 → 2 → 3 → 4</h3>
+    <div class="selection" aria-label="Выбранные фрагменты"></div>
+    <div class="pool" aria-label="Фрагменты для выбора">
+       <img src="1.png" alt="фрагмент 1" data-index="1" class="piece">
+       <img src="2.png" alt="фрагмент 2" data-index="2" class="piece">
+       <img src="3.png" alt="фрагмент 3" data-index="3" class="piece">
+        <img src="4.png" alt="фрагмент 4" data-index="4" class="piece">
+    </div>
+    <div style="margin-top:8px;">
+        <button class="clearCaptcha">Очистить капчу</button>
+        <button class="checkCaptcha">Проверить капчу</button>
+    </div>
+</div>
+<script>
+    const pieces = document.querySelectorAll('.piece');
+    const selection = document.querySelector(".selection");
+    const check = document.querySelector('.checkCaptcha')
+    const clear = document.querySelector('.clearCaptcha')
+    const pool = document.querySelector('.pool');
+    let imgs = [];
+    pieces.forEach(piece => {
+        piece.addEventListener('click', ()=>{
+             if (piece.parentNode === pool){
+            selection.appendChild(piece);  
+            piece.classList.add('select');
+            imgs.push(piece.dataset.index);
+             }
+             else{
+                pool.appendChild(piece)
+                imgs = imgs.filter(i => i !== piece.dataset.index);
+                shufflePool();
+             }
+        })
+    })
+    check.addEventListener('click', () =>{
+        if(imgs.toString() === [1, 2, 3, 4].toString())
+            console.log('капча правильно собрана')
+        else{
+            console.log('капча не правильно собрана')
+            shufflePool();
+            clearCaptcha();}
+            
+    })
+    function clearCaptcha(){
+        while (selection.firstChild) {
+            pool.appendChild(selection.firstChild);
+        imgs = [];
+    }
+}
+    clear.addEventListener('click', ()=>{
+        clearCaptcha();
+    });
+    function shufflePool() {
+    const pieces = Array.from(pool.children);
+    pieces.sort(() => Math.random() - 0.5).forEach(piece => pool.appendChild(piece));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    shufflePool();
+});
+
+
+
+
+</script>
+</body>
+</html>
